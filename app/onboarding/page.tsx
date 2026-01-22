@@ -418,32 +418,124 @@ function VerificationStep({
   )
 }
 
-function ConfirmationStep() {
+function ConfirmationStep({ formData }: { formData: any }) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .insert({
+          email: formData.email,
+          password: formData.password, // Note: In production, hash this!
+          full_name: formData.fullName,
+          id_type: formData.idType,
+          id_number: formData.idNumber,
+          bank_name: formData.bankName || null,
+          account_number: formData.accountNumber || null,
+          status: 'pending',
+        })
+
+      if (error) {
+        console.error('Error submitting application:', error)
+        setSubmitError(error.message || 'Failed to submit application. Please try again.')
+        setIsSubmitting(false)
+      } else {
+        setIsSubmitted(true)
+        setIsSubmitting(false)
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setSubmitError('An unexpected error occurred. Please try again.')
+      setIsSubmitting(false)
+    }
+  }
+
+  if (isSubmitted) {
+    return (
+      <div className="space-y-6 text-center">
+        <div>
+          <h3 className="text-xl font-medium text-white mb-2">
+            You're all set.
+          </h3>
+          <p className="text-gray-400 text-sm mb-6">
+            Your application has been submitted and is pending approval.
+          </p>
+        </div>
+        <Link
+          href="/check-application"
+          className="block w-full py-4 px-6 rounded-lg font-medium uppercase tracking-wider text-white transition-colors"
+          style={{ border: '1px solid #90EE90' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#90EE90'
+            e.currentTarget.style.color = '#000000'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = '#FFFFFF'
+          }}
+        >
+          Check Your Application
+        </Link>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 text-center">
       <div>
         <h3 className="text-xl font-medium text-white mb-2">
-          You're all set.
+          Review your information
         </h3>
         <p className="text-gray-400 text-sm mb-6">
-          Your application is pending approval.
+          Please review your details before submitting.
         </p>
       </div>
-      <Link
-        href="/check-application"
-        className="block w-full py-4 px-6 rounded-lg font-medium uppercase tracking-wider text-white transition-colors"
-        style={{ border: '1px solid #90EE90' }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#90EE90'
-          e.currentTarget.style.color = '#000000'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent'
-          e.currentTarget.style.color = '#FFFFFF'
-        }}
+
+      <div className="text-left space-y-3 bg-gray-900 p-6 rounded-lg">
+        <div>
+          <span className="text-gray-400 text-sm">Name:</span>
+          <p className="text-white">{formData.fullName}</p>
+        </div>
+        <div>
+          <span className="text-gray-400 text-sm">Email:</span>
+          <p className="text-white">{formData.email}</p>
+        </div>
+        <div>
+          <span className="text-gray-400 text-sm">ID Type:</span>
+          <p className="text-white capitalize">{formData.idType.replace('-', ' ')}</p>
+        </div>
+        <div>
+          <span className="text-gray-400 text-sm">ID Number:</span>
+          <p className="text-white">{formData.idNumber}</p>
+        </div>
+        {formData.bankName && (
+          <div>
+            <span className="text-gray-400 text-sm">Bank:</span>
+            <p className="text-white">{formData.bankName}</p>
+          </div>
+        )}
+      </div>
+
+      {submitError && (
+        <div className="bg-red-900/20 border border-red-500 text-red-400 p-4 rounded-lg text-sm">
+          {submitError}
+        </div>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting}
+        className="w-full py-4 px-6 rounded-lg font-medium transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+        style={{ backgroundColor: '#90EE90', color: '#000000' }}
       >
-        Check Your Application
-      </Link>
+        {isSubmitting ? 'Submitting...' : 'Submit Application'}
+      </button>
     </div>
   )
 }
