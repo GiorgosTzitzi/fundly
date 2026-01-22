@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
+import { supabase } from '@/lib/supabaseClient'
 
 type Step = 'account' | 'kyc' | 'confirmation'
 
@@ -122,7 +123,7 @@ export default function OnboardingPage() {
         )}
 
         {currentStep === 'confirmation' && (
-          <ConfirmationStep />
+          <ConfirmationStep formData={formData} />
         )}
       </div>
     </div>
