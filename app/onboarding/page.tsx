@@ -646,7 +646,7 @@ function ConfirmationStep({ formData }: { formData: any }) {
         </p>
       </div>
 
-      <div className="text-left space-y-3 bg-gray-900 p-6 rounded-lg">
+      <div className="text-left space-y-3">
         <div>
           <span className="text-gray-400 text-sm">Name:</span>
           <p className="text-white">{formData.fullName}</p>
