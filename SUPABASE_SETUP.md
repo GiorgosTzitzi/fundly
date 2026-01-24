@@ -24,33 +24,9 @@ You will need these in Step 4.
 
 ## Step 3 — Create your database table (with RLS)
 
-In Supabase → **SQL Editor**, run the SQL from `supabase-setup.sql`:
+In Supabase → **SQL Editor**, run the SQL from `supabase-applications-setup.sql` to create the applications table with Row Level Security policies.
 
-```sql
-create table notes (
-  id bigint primary key generated always as identity,
-  content text not null,
-  created_at timestamp with time zone default now()
-);
-
-alter table notes enable row level security;
-
--- Allow inserts (user input)
-create policy "public can insert notes"
-on public.notes
-for insert
-to anon
-with check (true);
-
--- Allow reads (optional)
-create policy "public can read notes"
-on public.notes
-for select
-to anon
-using (true);
-```
-
-**Important:** Without these policies, Supabase will reject requests even if keys are correct.
+**Important:** Without RLS policies, Supabase will reject requests even if keys are correct.
 
 ## Step 4 — Add Supabase environment variables to Vercel
 
@@ -88,21 +64,7 @@ This ensures your local app matches Vercel.
 
 ## Step 8 — Using Supabase in your components
 
-An example `NoteForm` component has been created at `/components/NoteForm.tsx`. You can import and use it in any page:
-
-```tsx
-import NoteForm from '@/components/NoteForm';
-
-export default function MyPage() {
-  return (
-    <div>
-      <NoteForm />
-    </div>
-  );
-}
-```
-
-Or use the Supabase client directly:
+Use the Supabase client directly in your components:
 
 ```tsx
 'use client';
@@ -111,12 +73,12 @@ import { supabase } from '@/lib/supabaseClient';
 
 // Insert data
 const { error } = await supabase
-  .from('notes')
-  .insert({ content: 'Hello World' });
+  .from('applications')
+  .insert({ email: 'user@example.com', ... });
 
 // Read data
 const { data, error } = await supabase
-  .from('notes')
+  .from('applications')
   .select('*');
 ```
 
@@ -131,7 +93,7 @@ Your deployed app now writes to Supabase.
 ## Step 10 — Verify in Supabase
 
 1. Go to **Supabase → Table Editor**
-2. Open the `notes` table
+2. Open the `applications` table
 3. Submit the form in production
 4. Confirm rows appear
 

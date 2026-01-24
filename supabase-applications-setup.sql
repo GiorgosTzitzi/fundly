@@ -7,10 +7,11 @@ create table applications (
   email text not null unique, -- Unique constraint prevents duplicate emails
   password text not null, -- Note: In production, you should hash passwords!
   full_name text not null,
+  phone_country_code text not null,
+  phone_number text not null unique, -- Unique constraint prevents duplicate phone numbers
   id_type text not null,
   id_number text not null unique, -- Unique constraint prevents duplicate ID numbers
-  bank_name text,
-  account_number text,
+  nationality text not null,
   status text default 'pending',
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
