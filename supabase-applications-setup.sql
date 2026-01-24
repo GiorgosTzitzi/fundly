@@ -8,7 +8,7 @@ create table applications (
   password text not null, -- Note: In production, you should hash passwords!
   full_name text not null,
   id_type text not null,
-  id_number text not null,
+  id_number text not null unique, -- Unique constraint prevents duplicate ID numbers
   bank_name text,
   account_number text,
   status text default 'pending',

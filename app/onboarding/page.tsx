@@ -429,22 +429,37 @@ function ConfirmationStep({ formData }: { formData: any }) {
 
     try {
       // First, check if email already exists
-      const { data: existingApp, error: checkError } = await supabase
+      const { data: existingAppByEmail, error: emailCheckError } = await supabase
         .from('applications')
         .select('email')
         .eq('email', formData.email.toLowerCase().trim())
         .single()
 
-      // If we found an existing application (not an error, but data exists)
-      if (existingApp && !checkError) {
+      // If we found an existing application by email
+      if (existingAppByEmail && !emailCheckError) {
         setSubmitError('An application with this email already exists. Please use "Check Application" to view your status.')
         setIsSubmitting(false)
         return
       }
 
+      // Check if ID number already exists
+      const { data: existingAppByIdNumber, error: idNumberCheckError } = await supabase
+        .from('applications')
+        .select('id_number')
+        .eq('id_number', formData.idNumber.trim())
+        .single()
+
+      // If we found an existing application by ID number
+      if (existingAppByIdNumber && !idNumberCheckError) {
+        setSubmitError('An application with this ID number already exists. Please use "Check Application" to view your status.')
+        setIsSubmitting(false)
+        return
+      }
+
       // If there's an error other than "not found", handle it
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Error checking for existing application:', checkError)
+      if ((emailCheckError && emailCheckError.code !== 'PGRST116') || 
+          (idNumberCheckError && idNumberCheckError.code !== 'PGRST116')) {
+        console.error('Error checking for existing application:', emailCheckError || idNumberCheckError)
         setSubmitError('Error checking application. Please try again.')
         setIsSubmitting(false)
         return
@@ -458,7 +473,7 @@ function ConfirmationStep({ formData }: { formData: any }) {
           password: formData.password, // Note: In production, hash this!
           full_name: formData.fullName,
           id_type: formData.idType,
-          id_number: formData.idNumber,
+          id_number: formData.idNumber.trim(),
           bank_name: formData.bankName || null,
           account_number: formData.accountNumber || null,
           status: 'pending',
@@ -467,9 +482,15 @@ function ConfirmationStep({ formData }: { formData: any }) {
       if (error) {
         console.error('Error submitting application:', error)
         
-        // Handle duplicate email error from database constraint
+        // Handle duplicate email or ID number error from database constraint
         if (error.code === '23505' || error.message.includes('unique') || error.message.includes('duplicate')) {
-          setSubmitError('An application with this email already exists. Please use "Check Application" to view your status.')
+          if (error.message.includes('email') || error.details?.includes('email')) {
+            setSubmitError('An application with this email already exists. Please use "Check Application" to view your status.')
+          } else if (error.message.includes('id_number') || error.details?.includes('id_number')) {
+            setSubmitError('An application with this ID number already exists. Please use "Check Application" to view your status.')
+          } else {
+            setSubmitError('An application with this information already exists. Please use "Check Application" to view your status.')
+          }
         } else {
           setSubmitError(error.message || 'Failed to submit application. Please try again.')
         }
