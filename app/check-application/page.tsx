@@ -3,20 +3,106 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
+import { supabase } from '@/lib/supabaseClient'
+
+type ApplicationStatus = 'pending' | 'approved' | 'rejected'
+
+interface Application {
+  id: number
+  email: string
+  full_name: string
+  status: ApplicationStatus
+  created_at: string
+}
 
 export default function CheckApplicationPage() {
   const [showStatus, setShowStatus] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [application, setApplication] = useState<Application | null>(null)
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, this would verify credentials
-    setShowStatus(true)
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Query the database for the email
+      const { data, error: queryError } = await supabase
+        .from('applications')
+        .select('id, email, password, full_name, status, created_at')
+        .eq('email', email.toLowerCase().trim())
+        .single()
+
+      if (queryError) {
+        if (queryError.code === 'PGRST116') {
+          // No rows returned
+          setError('No application found with this email address.')
+        } else {
+          setError('Error checking application. Please try again.')
+          console.error('Query error:', queryError)
+        }
+        setIsLoading(false)
+        return
+      }
+
+      // Verify password matches
+      if (data.password !== password) {
+        setError('Invalid email or password.')
+        setIsLoading(false)
+        return
+      }
+
+      // Credentials are valid, show status
+      setApplication({
+        id: data.id,
+        email: data.email,
+        full_name: data.full_name,
+        status: data.status as ApplicationStatus,
+        created_at: data.created_at,
+      })
+      setShowStatus(true)
+      setIsLoading(false)
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setError('An unexpected error occurred. Please try again.')
+      setIsLoading(false)
+    }
   }
 
   const handleBack = () => {
     setShowStatus(false)
+    setError(null)
+    setApplication(null)
+  }
+
+  const getStatusDisplay = (status: ApplicationStatus) => {
+    switch (status) {
+      case 'approved':
+        return {
+          label: 'Approved',
+          color: '#90EE90',
+          bgColor: 'rgba(144, 238, 144, 0.2)',
+          message: 'Congratulations! Your application has been approved.',
+        }
+      case 'rejected':
+        return {
+          label: 'Rejected',
+          color: '#FF6B6B',
+          bgColor: 'rgba(255, 107, 107, 0.2)',
+          message: 'Unfortunately, your application was not approved at this time.',
+        }
+      case 'pending':
+      default:
+        return {
+          label: 'Pending',
+          color: '#FFD93D',
+          bgColor: 'rgba(255, 217, 61, 0.2)',
+          message: "We'll notify you once your application has been reviewed.",
+        }
+    }
   }
 
   return (
@@ -82,7 +168,8 @@ export default function CheckApplicationPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-black border border-gray-600 text-white rounded-lg outline-none"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-black border border-gray-600 text-white rounded-lg outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = '#90EE90'
                   e.currentTarget.style.boxShadow = '0 0 0 2px #90EE90'
@@ -107,7 +194,8 @@ export default function CheckApplicationPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-black border border-gray-600 text-white rounded-lg outline-none"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-black border border-gray-600 text-white rounded-lg outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = '#90EE90'
                   e.currentTarget.style.boxShadow = '0 0 0 2px #90EE90'
@@ -119,31 +207,54 @@ export default function CheckApplicationPage() {
               />
             </div>
 
+            {error && (
+              <div className="bg-red-900/20 border border-red-500 text-red-400 p-4 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full text-black py-4 px-6 rounded-lg font-medium transition-colors"
+              disabled={isLoading}
+              className="w-full text-black py-4 px-6 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#90EE90' }}
             >
-              Check Status
+              {isLoading ? 'Checking...' : 'Check Status'}
             </button>
           </form>
-        ) : (
+        ) : application ? (
           <div className="space-y-6 text-center">
             <div>
               <h3 className="text-xl font-medium text-white mb-2">
                 Application Status
               </h3>
+              <p className="text-gray-400 text-sm mb-4">
+                {application.full_name}
+              </p>
               <div className="mt-6">
-                <div className="inline-block px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(144, 238, 144, 0.2)' }}>
-                  <span className="text-[#90EE90] font-medium">Waitlist</span>
+                <div
+                  className="inline-block px-4 py-2 rounded-lg"
+                  style={{ backgroundColor: getStatusDisplay(application.status).bgColor }}
+                >
+                  <span
+                    className="font-medium"
+                    style={{ color: getStatusDisplay(application.status).color }}
+                  >
+                    {getStatusDisplay(application.status).label}
+                  </span>
                 </div>
               </div>
               <p className="text-gray-400 text-sm mt-4">
-                We'll notify you once your application has been reviewed.
+                {getStatusDisplay(application.status).message}
               </p>
+              {application.status === 'pending' && (
+                <p className="text-gray-500 text-xs mt-2">
+                  Submitted on {new Date(application.created_at).toLocaleDateString()}
+                </p>
+              )}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )
