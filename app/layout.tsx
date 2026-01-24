@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Fundly - Real Asset Capital Marketplace',
+  title: 'Fundly',
   description: 'Connect with real-asset investment opportunities in shipping and construction',
 }
 
