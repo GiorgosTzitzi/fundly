@@ -4,7 +4,7 @@
 -- Create the applications table
 create table applications (
   id bigint primary key generated always as identity,
-  email text not null,
+  email text not null unique, -- Unique constraint prevents duplicate emails
   password text not null, -- Note: In production, you should hash passwords!
   full_name text not null,
   id_type text not null,

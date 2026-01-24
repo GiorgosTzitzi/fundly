@@ -428,10 +428,33 @@ function ConfirmationStep({ formData }: { formData: any }) {
     setSubmitError(null)
 
     try {
+      // First, check if email already exists
+      const { data: existingApp, error: checkError } = await supabase
+        .from('applications')
+        .select('email')
+        .eq('email', formData.email.toLowerCase().trim())
+        .single()
+
+      // If we found an existing application (not an error, but data exists)
+      if (existingApp && !checkError) {
+        setSubmitError('An application with this email already exists. Please use "Check Application" to view your status.')
+        setIsSubmitting(false)
+        return
+      }
+
+      // If there's an error other than "not found", handle it
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking for existing application:', checkError)
+        setSubmitError('Error checking application. Please try again.')
+        setIsSubmitting(false)
+        return
+      }
+
+      // Email doesn't exist, proceed with insertion
       const { error } = await supabase
         .from('applications')
         .insert({
-          email: formData.email,
+          email: formData.email.toLowerCase().trim(),
           password: formData.password, // Note: In production, hash this!
           full_name: formData.fullName,
           id_type: formData.idType,
@@ -443,7 +466,13 @@ function ConfirmationStep({ formData }: { formData: any }) {
 
       if (error) {
         console.error('Error submitting application:', error)
-        setSubmitError(error.message || 'Failed to submit application. Please try again.')
+        
+        // Handle duplicate email error from database constraint
+        if (error.code === '23505' || error.message.includes('unique') || error.message.includes('duplicate')) {
+          setSubmitError('An application with this email already exists. Please use "Check Application" to view your status.')
+        } else {
+          setSubmitError(error.message || 'Failed to submit application. Please try again.')
+        }
         setIsSubmitting(false)
       } else {
         setIsSubmitted(true)
