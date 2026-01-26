@@ -46,6 +46,41 @@ const shipProjects: ShipProject[] = [
   },
 ]
 
+function BeProjectOwnerButton() {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <button
+        type="button"
+        disabled
+        className="px-4 py-2 rounded-lg font-medium text-sm transition-colors cursor-not-allowed opacity-50"
+        style={{ 
+          border: '1px solid #90EE90',
+          color: '#90EE90',
+          backgroundColor: 'transparent'
+        }}
+      >
+        Be a project owner
+      </button>
+      {showTooltip && (
+        <div className="absolute right-0 top-full mt-2 w-80 z-50">
+          <div className="bg-gray-900 border border-[#90EE90] rounded-lg p-4 shadow-2xl">
+            <p className="text-xs text-gray-300 leading-relaxed">
+              You need to be an approved project owner to publish and have an opportunity crowd fund your projects.
+            </p>
+            <div className="absolute right-4 top-0 -translate-y-full w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-transparent border-b-[#90EE90]"></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function MarketplacePage() {
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
@@ -155,15 +190,18 @@ export default function MarketplacePage() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center justify-center mb-6 relative">
             <Logo />
-            <Link
-              href="/"
-              className="absolute right-0 text-gray-400 hover:text-[#90EE90] transition-colors text-sm"
-              onClick={() => {
-                sessionStorage.removeItem('user_email')
-              }}
-            >
-              Logout
-            </Link>
+            <div className="absolute right-0 flex items-center gap-4">
+              <BeProjectOwnerButton />
+              <Link
+                href="/"
+                className="text-gray-400 hover:text-[#90EE90] transition-colors text-sm"
+                onClick={() => {
+                  sessionStorage.removeItem('user_email')
+                }}
+              >
+                Logout
+              </Link>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <div>
