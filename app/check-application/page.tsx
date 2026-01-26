@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { supabase } from '@/lib/supabaseClient'
@@ -16,6 +17,7 @@ interface Application {
 }
 
 export default function CheckApplicationPage() {
+  const router = useRouter()
   const [showStatus, setShowStatus] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -55,14 +57,20 @@ export default function CheckApplicationPage() {
         return
       }
 
-      // Credentials are valid, show status
-      setApplication({
+      // Credentials are valid
+      const appData = {
         id: data.id,
         email: data.email,
         full_name: data.full_name,
         status: data.status as ApplicationStatus,
         created_at: data.created_at,
-      })
+      }
+      setApplication(appData)
+      
+      // Store email in sessionStorage for marketplace access
+      sessionStorage.setItem('user_email', appData.email)
+      
+      // Show status page (including for approved users - they'll see the marketplace button)
       setShowStatus(true)
       setIsLoading(false)
     } catch (err) {
@@ -109,7 +117,7 @@ export default function CheckApplicationPage() {
     <div className="min-h-screen bg-black">
       <div className="max-w-2xl mx-auto px-6 py-12">
         {/* Logo */}
-        <div className="mb-8">
+        <div className="mb-8 flex justify-center">
           <Logo />
         </div>
 
@@ -247,6 +255,24 @@ export default function CheckApplicationPage() {
               <p className="text-gray-400 text-sm mt-4">
                 {getStatusDisplay(application.status).message}
               </p>
+              {application.status === 'approved' && (
+                <div className="mt-10 space-y-4">
+                  <Link
+                    href="/marketplace"
+                    className="block w-full py-5 px-8 rounded-lg font-semibold text-lg tracking-wide text-black transition-all hover:opacity-90 hover:scale-[1.02] shadow-lg"
+                    style={{ backgroundColor: '#90EE90' }}
+                    onClick={() => {
+                      // Store email - marketplace will verify approval status directly from Supabase
+                      sessionStorage.setItem('user_email', application.email)
+                    }}
+                  >
+                    View Investment Opportunities →
+                  </Link>
+                  <p className="text-gray-500 text-xs text-center">
+                    Explore available ship investment projects
+                  </p>
+                </div>
+              )}
               {application.status === 'pending' && (
                 <p className="text-gray-500 text-xs mt-2">
                   Submitted on {new Date(application.created_at).toLocaleDateString()}

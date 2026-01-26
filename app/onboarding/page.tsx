@@ -199,7 +199,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-black">
       <div className="max-w-2xl mx-auto px-6 py-12">
         {/* Logo */}
-        <div className="mb-8">
+        <div className="mb-8 flex justify-center">
           <Logo />
         </div>
 

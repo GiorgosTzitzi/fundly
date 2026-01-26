@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Logo from '@/components/Logo'
+import Link from 'next/link'
 
 type Activity = {
   id: string
@@ -13,73 +14,141 @@ type Activity = {
   amount?: number
 }
 
-const mockProject = {
+// Comprehensive project data from Information Memorandum - Dalex Handy AS / L.P.
+const dalexHandyProject = {
   id: '1',
-  title: 'Container Ship Fleet Expansion',
+  title: 'MV Atlantic Bulker (tbrn MV Kambos)',
+  shipName: 'MV Atlantic Bulker',
+  shipNameToBeRenamed: 'MV Kambos',
   sector: 'shipping',
-  description:
-    'Acquisition of two modern container vessels to expand Mediterranean routes. This project will enable the operator to serve additional ports and increase capacity by 40%.',
-  minInvestment: 50000,
-  goal: 5000000,
-  raised: 2500000,
-  deadline: '2024-08-15',
-  investors: 12,
+  shipType: 'Handysize Dry Bulk Carrier',
+  description: 'Acquisition of Japanese 2014-built Handysize Dry Bulk Vessel at an attractive entry level in a rising market. The purchase price for the 36,309dwt unit is USD 16.0m (abt. 10% below newbuild parity). Dalex Shipping will invest min. 30% of the equity in the project and handle the commercial and technical management of the vessel.',
+  minInvestment: 142500, // USD 142,500 (1.5% minimum subscription)
+  goal: 9500000, // Equity value USD 9,500,000
+  raised: 7125000, // 75% pre-subscriptions
+  deadline: '2025-11-26',
+  investors: 0,
   status: 'open',
-  equity: 60,
-  debt: 40,
+  equity: 55, // 55% equity
+  debt: 45, // 45% debt (USD 7,750,000)
   riskLevel: 'Medium',
-  expectedReturn: '12-15%',
+  expectedReturn: '17% p.a.',
   duration: '5 years',
+  
+  // Vessel Details
+  vessel: {
+    built: 'April 2014',
+    yard: 'Shikoku, Japan',
+    design: 'Mitsui Neo36',
+    class: 'NKK',
+    flag: 'Panama (To be reflagged Marshall Islands)',
+    deadweight: 36309,
+    cargoHolds: 5,
+    hatches: 5,
+    speedLaden: '12.5kn / 11.0kn (Eco Speed) / 9.0kn (Super Eco Speed)',
+    consumptionLaden: '20.0mt / 16.0mt / 12mt',
+    speedBallast: '13.5kn / 11.5kn (Eco Speed) / 9.5kn (Super Eco Speed)',
+    consumptionBallast: '20.0mt / 16.0mt / 12mt',
+    bwts: 'Alfa Laval Pureblast 3.1, Installed 2022',
+    ldwt: 7555,
+    ciiRating: 'B (Projected)',
+    dimensions: 'LOA: 176.50 / Beam: 28.80 / Draught: 10.72m',
+    mainEngine: 'MAN B&W 6S46MCC8',
+    nextSSDD: 'March 2027',
+    technicalRating: '7.8/10',
+    surveyor: 'Aalmar Marine Surveyor',
+    inspectionDate: 'October 8, 2025',
+  },
+  
+  // Financial Details
+  financials: {
+    purchasePrice: 16000000,
+    equityValue: 9500000,
+    mortgageDebt: 7750000,
+    margin: '230 bps, falling to 215 bps after full cash sweep',
+    upfrontFee: '100 bps',
+    commitmentFee: '100 bps',
+    tenor: '5 years from delivery',
+    balloonPayment: 2550000, // USD 2,550,000 (USD 3,390,000 if no cash sweep)
+    ageAdjustedProfile: '>20-year profile to zero',
+    cashBreakeven: 9100, // USD 9,100/Day (excluding SS/DD)
+    opexBudget: 4950, // USD 4,950/day including Technical & Commercial Management fee
+    baseCaseIRR: 17.1, // %
+    moic: 1.91, // Multiple on Invested Capital
+  },
+  
+  // Market & Returns
+  market: {
+    avgNetTCRate: 13450, // USD/day
+    netSalesPrice: 13250000, // USD 13,250,000 (end of year 5)
+    historicalAvgBHSI: 13562, // USD/day (2017-2025 YTD)
+    historicalAvg16YearOld: 14000000, // USD 14,000,000
+  },
+  
+  // Management
+  management: {
+    technicalCommercial: 'Dalex Shipping Co. S.A.',
+    corporateManager: 'NRP Business Management AS',
+    arranger: 'NRP Project Finance AS',
+    sponsor: 'Dalex Shipping Co. S.A. (min. 30% equity)',
+  },
+  
+  // Key Highlights
+  highlights: [
+    'Acquisition at attractive entry level (Abt. 10% below newbuild parity)',
+    'Vessel rated technically 7.8 out of 10 by Aalmar Marine Surveyor',
+    'Dry bulk market improved significantly since June (>45% earnings lift)',
+    'Favorable market outlook for modern Handysize vessels',
+    'Attractive debt financing with over 20-year profile to zero',
+    'Highly professional Handysize expert, Dalex Shipping, investing 30% equity',
+    'Dalex has outperformed market by 4.2% and opex by abt 18% past 10 years',
+    'Pre-subscriptions and indications of abt. 75%',
+  ],
+  
+  // Return Scenarios
+  returnScenarios: [
+    {
+      avgTCRate: 10900,
+      salesPrice: 9000000,
+      irr: -0.3,
+      label: 'Low Case',
+    },
+    {
+      avgTCRate: 13450,
+      salesPrice: 13250000,
+      irr: 17.1,
+      label: 'Base Case',
+    },
+    {
+      avgTCRate: 15500,
+      salesPrice: 16250000,
+      irr: 28.1,
+      label: 'High Case',
+    },
+  ],
+  
+  subscriptionPeriod: '17.11.2025 – 26.11.2025',
+  
+  // Risk Factors
+  riskFactors: [
+    'Market volatility in shipping industry',
+    'Regulatory changes affecting maritime operations',
+    'Fuel price fluctuations',
+    'Currency exchange rate risks',
+    'Counterparty risk in charter agreements',
+    'Technical and operational risks',
+    'Residual value fluctuations',
+    'Liquidity of company shares',
+    'Legislative, class, environment and tax changes',
+  ],
 }
 
-const mockActivities: Activity[] = [
-  {
-    id: '1',
-    date: '2024-01-10',
-    type: 'created',
-    message: 'Project created by owner',
-  },
-  {
-    id: '2',
-    date: '2024-01-15',
-    type: 'investment',
-    message: 'Investment received',
-    user: 'Investor A',
-    amount: 200000,
-  },
-  {
-    id: '3',
-    date: '2024-01-20',
-    type: 'investment',
-    message: 'Investment received',
-    user: 'Investor B',
-    amount: 500000,
-  },
-  {
-    id: '4',
-    date: '2024-02-01',
-    type: 'milestone',
-    message: 'Vessel inspection completed',
-  },
-  {
-    id: '5',
-    date: '2024-02-15',
-    type: 'investment',
-    message: 'Investment received',
-    user: 'Investor C',
-    amount: 300000,
-  },
-  {
-    id: '6',
-    date: '2024-03-01',
-    type: 'update',
-    message: 'Due diligence phase completed',
-  },
-]
+const mockProject = dalexHandyProject
+
 
 export default function ProjectDetailPage() {
   const params = useParams()
-  const [activeTab, setActiveTab] = useState<'overview' | 'investors' | 'activity'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'vessel' | 'financials' | 'returns' | 'risks'>(
     'overview'
   )
 
@@ -90,86 +159,108 @@ export default function ProjectDetailPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Logo */}
-        <div className="mb-6">
+        <div className="mb-6 flex justify-center">
           <Logo />
         </div>
+        {/* Back Button */}
+        <Link
+          href="/marketplace"
+          className="mb-6 inline-block text-white hover:text-[#90EE90] transition-colors"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </Link>
         {/* Header */}
-        <div className="bg-white rounded-lg border border-gray-200 p-8 mb-6">
+        <div className="bg-black border border-gray-800 rounded-lg p-8 mb-6">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: 'rgba(144, 238, 144, 0.2)', color: '#90EE90' }}>
-                  {mockProject.sector.charAt(0).toUpperCase() +
-                    mockProject.sector.slice(1)}
+                  {mockProject.shipType}
                 </span>
                 <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: 'rgba(144, 238, 144, 0.2)', color: '#90EE90' }}>
                   {mockProject.status}
                 </span>
               </div>
-              <h1 className="text-3xl font-medium text-gray-900 mb-3">
+              <h1 className="text-3xl font-medium text-white mb-3">
                 {mockProject.title}
               </h1>
-              <p className="text-gray-600 text-lg">{mockProject.description}</p>
+              <p className="text-gray-400 text-lg">{mockProject.description}</p>
             </div>
           </div>
 
           {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-gray-800">
             <div>
-              <div className="text-sm text-gray-500 mb-1">Total Raised</div>
-              <div className="text-2xl font-medium text-gray-900">
-                €{(mockProject.raised / 1000000).toFixed(2)}M
+              <div className="text-sm text-gray-500 mb-1">Equity Raised</div>
+              <div className="text-2xl font-medium text-white">
+                ${(mockProject.raised / 1000000).toFixed(2)}M
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Funding Goal</div>
-              <div className="text-2xl font-medium text-gray-900">
-                €{(mockProject.goal / 1000000).toFixed(2)}M
+              <div className="text-sm text-gray-500 mb-1">Equity Goal</div>
+              <div className="text-2xl font-medium text-white">
+                ${(mockProject.goal / 1000000).toFixed(2)}M
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Investors</div>
-              <div className="text-2xl font-medium text-gray-900">
-                {mockProject.investors}
+              <div className="text-sm text-gray-500 mb-1">Purchase Price</div>
+              <div className="text-2xl font-medium text-white">
+                ${(mockProject.financials.purchasePrice / 1000000).toFixed(1)}M
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Days Remaining</div>
-              <div className="text-2xl font-medium text-gray-900">
-                {daysRemaining > 0 ? daysRemaining : 0}
+              <div className="text-sm text-gray-500 mb-1">Base Case IRR</div>
+              <div className="text-2xl font-medium text-[#90EE90]">
+                {mockProject.financials.baseCaseIRR}%
               </div>
             </div>
           </div>
 
           {/* Progress Ring */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="mt-8 pt-6 border-t border-gray-800">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-medium text-gray-900">
-                Funding Progress
+              <span className="text-lg font-medium text-white">
+                Equity Subscription Progress
               </span>
               <span className="text-lg font-semibold" style={{ color: '#90EE90' }}>
                 {progress.toFixed(1)}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-4">
+            <div className="w-full bg-gray-800 rounded-full h-4">
               <div
                 className="h-4 rounded-full transition-all"
                 style={{ width: `${progress}%`, backgroundColor: '#90EE90' }}
               />
             </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Subscription period: {mockProject.subscriptionPeriod || '17.11.2025 – 26.11.2025'}
+            </p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-6">
-          <div className="flex border-b border-gray-200">
+        <div className="bg-black rounded-lg border border-gray-800 mb-6">
+          <div className="flex border-b border-gray-800">
             {[
               { key: 'overview', label: 'Overview' },
-              { key: 'investors', label: 'Investors' },
-              { key: 'activity', label: 'Activity' },
+              { key: 'vessel', label: 'Vessel Details' },
+              { key: 'financials', label: 'Financials' },
+              { key: 'returns', label: 'Return Scenarios' },
+              { key: 'risks', label: 'Risk Factors' },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -177,7 +268,7 @@ export default function ProjectDetailPage() {
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === tab.key
                     ? 'border-b-2'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-400 hover:text-white'
                 }`}
                 style={activeTab === tab.key ? { borderBottomColor: '#90EE90', color: '#90EE90' } : {}}
               >
@@ -188,19 +279,21 @@ export default function ProjectDetailPage() {
 
           <div className="p-8">
             {activeTab === 'overview' && <OverviewTab project={mockProject} />}
-            {activeTab === 'investors' && <InvestorsTab />}
-            {activeTab === 'activity' && <ActivityTab activities={mockActivities} />}
+            {activeTab === 'vessel' && <VesselTab project={mockProject} />}
+            {activeTab === 'financials' && <FinancialsTab project={mockProject} />}
+            {activeTab === 'returns' && <ReturnsTab project={mockProject} />}
+            {activeTab === 'risks' && <RisksTab project={mockProject} />}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-black rounded-lg border border-gray-800 p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <button className="flex-1 text-black py-4 px-6 rounded-lg font-medium transition-colors" style={{ backgroundColor: '#90EE90' }}>
-              Invest Now
+              Subscribe Now
             </button>
             <button 
-              className="flex-1 text-gray-700 py-4 px-6 rounded-lg font-medium transition-colors"
+              className="flex-1 text-white py-4 px-6 rounded-lg font-medium transition-colors"
               style={{ border: '1px solid #90EE90' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#90EE90'
@@ -208,12 +301,15 @@ export default function ProjectDetailPage() {
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#374151'
+                e.currentTarget.style.color = '#FFFFFF'
               }}
             >
-              Ask a Question
+              Contact Arranger
             </button>
           </div>
+          <p className="text-xs text-gray-500 mt-4 text-center">
+            Minimum subscription: ${(mockProject.minInvestment / 1000).toFixed(0)}K (1.5% of equity)
+          </p>
         </div>
       </div>
     </div>
@@ -223,61 +319,361 @@ export default function ProjectDetailPage() {
 function OverviewTab({ project }: { project: any }) {
   return (
     <div className="space-y-8">
+      {/* Investment Highlights */}
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">
+          Investment Highlights
+        </h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <ul className="space-y-3">
+            {project.highlights?.map((highlight: string, index: number) => (
+              <li key={index} className="flex items-start gap-3 text-gray-300">
+                <span className="text-[#90EE90] mt-1">✓</span>
+                <span className="text-sm">{highlight}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
       {/* Funding Breakdown */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Funding Breakdown
+        <h3 className="text-lg font-medium text-white mb-4">
+          Capital Structure
         </h3>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
             <div className="text-sm text-gray-500 mb-1">Equity</div>
-            <div className="text-2xl font-medium text-gray-900">{project.equity}%</div>
+            <div className="text-2xl font-medium text-white">{project.equity}%</div>
+            <div className="text-xs text-gray-500 mt-1">${(project.financials?.equityValue / 1000000).toFixed(1)}M</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
             <div className="text-sm text-gray-500 mb-1">Debt</div>
-            <div className="text-2xl font-medium text-gray-900">{project.debt}%</div>
+            <div className="text-2xl font-medium text-white">{project.debt}%</div>
+            <div className="text-xs text-gray-500 mt-1">${(project.financials?.mortgageDebt / 1000000).toFixed(1)}M</div>
           </div>
         </div>
       </div>
 
-      {/* Project Details */}
+      {/* Key Project Details */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Project Details
+        <h3 className="text-lg font-medium text-white mb-4">
+          Key Project Details
         </h3>
-        <div className="space-y-4">
-          <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Minimum Investment</span>
-            <span className="font-medium text-gray-900">
-              €{(project.minInvestment / 1000).toFixed(0)}K
-            </span>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Minimum Investment</span>
+              <span className="font-medium text-white">
+                ${(project.minInvestment / 1000).toFixed(0)}K
+              </span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Expected Return (Base Case)</span>
+              <span className="font-medium text-[#90EE90]">
+                {project.expectedReturn}
+              </span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Project Duration</span>
+              <span className="font-medium text-white">{project.duration}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Cash Breakeven Rate</span>
+              <span className="font-medium text-white">
+                ${project.financials?.cashBreakeven?.toLocaleString()}/day
+              </span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">MOIC (Multiple on Invested Capital)</span>
+              <span className="font-medium text-[#90EE90]">
+                {project.financials?.moic}x
+              </span>
+            </div>
+            <div className="flex justify-between py-3">
+              <span className="text-gray-400">Management</span>
+              <span className="font-medium text-white text-right">
+                {project.management?.technicalCommercial}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Expected Return</span>
-            <span className="font-medium text-gray-900">
-              {project.expectedReturn}
-            </span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Duration</span>
-            <span className="font-medium text-gray-900">{project.duration}</span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Risk Level</span>
-            <span className="font-medium text-gray-900">{project.riskLevel}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VesselTab({ project }: { project: any }) {
+  const vessel = project.vessel
+  if (!vessel) return <div className="text-white">No vessel details available</div>
+  
+  return (
+    <div className="space-y-8">
+      {/* Vessel Specifications */}
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">Vessel Specifications</h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Vessel Name</div>
+              <div className="text-white font-medium">{project.shipName}</div>
+              <div className="text-xs text-gray-500 mt-1">To be renamed: {project.shipNameToBeRenamed}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Built</div>
+              <div className="text-white font-medium">{vessel.built}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Shipyard</div>
+              <div className="text-white font-medium">{vessel.yard}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Design</div>
+              <div className="text-white font-medium">{vessel.design}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Deadweight</div>
+              <div className="text-white font-medium">{vessel.deadweight?.toLocaleString()} dwt</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Class</div>
+              <div className="text-white font-medium">{vessel.class}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Flag</div>
+              <div className="text-white font-medium">{vessel.flag}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">CII Rating</div>
+              <div className="text-white font-medium">{vessel.ciiRating}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Technical Rating</div>
+              <div className="text-[#90EE90] font-medium">{vessel.technicalRating} by {vessel.surveyor}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Next SS/DD</div>
+              <div className="text-white font-medium">{vessel.nextSSDD}</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Risk Factors */}
+      {/* Performance Characteristics */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Risk Factors</h3>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
-            <li>Market volatility in shipping industry</li>
-            <li>Regulatory changes affecting maritime operations</li>
-            <li>Fuel price fluctuations</li>
-            <li>Currency exchange rate risks</li>
+        <h3 className="text-lg font-medium text-white mb-4">Performance Characteristics</h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-gray-500 mb-2">Speed & Consumption (Laden)</div>
+              <div className="text-white">{vessel.speedLaden}</div>
+              <div className="text-gray-400 text-sm mt-1">Consumption: {vessel.consumptionLaden}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-2">Speed & Consumption (Ballast)</div>
+              <div className="text-white">{vessel.speedBallast}</div>
+              <div className="text-gray-400 text-sm mt-1">Consumption: {vessel.consumptionBallast}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-2">Main Engine</div>
+              <div className="text-white">{vessel.mainEngine}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-2">Ballast Water Treatment System</div>
+              <div className="text-white">{vessel.bwts}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-2">Dimensions</div>
+              <div className="text-white">{vessel.dimensions}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-2">Cargo Holds / Hatches</div>
+              <div className="text-white">{vessel.cargoHolds} Holds / {vessel.hatches} Hatches</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FinancialsTab({ project }: { project: any }) {
+  const financials = project.financials
+  if (!financials) return <div className="text-white">No financial details available</div>
+  
+  return (
+    <div className="space-y-8">
+      {/* Sources & Uses */}
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">Sources & Uses</h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <div className="text-sm text-gray-500 mb-3">Sources</div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Paid in Equity</span>
+                  <span className="text-white">${(financials.equityValue / 1000000).toFixed(1)}M</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Mortgage Loan</span>
+                  <span className="text-white">${(financials.mortgageDebt / 1000000).toFixed(1)}M</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-3">Uses</div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Purchase Price</span>
+                  <span className="text-white">${(financials.purchasePrice / 1000000).toFixed(1)}M</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Working Capital</span>
+                  <span className="text-white">$0.7M</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Fees & Expenses</span>
+                  <span className="text-white">$0.5M</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Financing Terms */}
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">Financing Terms</h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Loan Facility</span>
+              <span className="text-white">${(financials.mortgageDebt / 1000000).toFixed(1)}M</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Tenor</span>
+              <span className="text-white">{financials.tenor}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Margin</span>
+              <span className="text-white">{financials.margin}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Upfront Fee</span>
+              <span className="text-white">{financials.upfrontFee}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Balloon Payment</span>
+              <span className="text-white">${(financials.balloonPayment / 1000000).toFixed(2)}M</span>
+            </div>
+            <div className="flex justify-between py-3">
+              <span className="text-gray-400">Age-Adjusted Profile</span>
+              <span className="text-white">{financials.ageAdjustedProfile}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Operating Economics */}
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">Operating Economics</h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Cash Breakeven Rate</span>
+              <span className="text-[#90EE90] font-medium">${financials.cashBreakeven?.toLocaleString()}/day</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">OPEX Budget (incl. Management)</span>
+              <span className="text-white">${financials.opexBudget?.toLocaleString()}/day</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-gray-800">
+              <span className="text-gray-400">Average Net TC Rate (Base Case)</span>
+              <span className="text-white">${project.market?.avgNetTCRate?.toLocaleString()}/day</span>
+            </div>
+            <div className="flex justify-between py-3">
+              <span className="text-gray-400">Net Sales Price (Year 5)</span>
+              <span className="text-white">${(project.market?.netSalesPrice / 1000000).toFixed(2)}M</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ReturnsTab({ project }: { project: any }) {
+  return (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">Return Scenarios</h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <p className="text-sm text-gray-400 mb-6">
+            The return calculation assumes a 60-month holding period with a sale of the vessel at the end of year 5 of operation. 
+            IRR calculations are net to owners.
+          </p>
+          <div className="space-y-4">
+            {project.returnScenarios?.map((scenario: any, index: number) => (
+              <div key={index} className="border border-gray-800 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white font-medium">{scenario.label}</span>
+                  <span className={`text-2xl font-bold ${scenario.irr >= 17 ? 'text-[#90EE90]' : scenario.irr >= 0 ? 'text-white' : 'text-red-400'}`}>
+                    {scenario.irr > 0 ? '+' : ''}{scenario.irr}%
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-500">Avg. Net TC Rate</div>
+                    <div className="text-white">${scenario.avgTCRate?.toLocaleString()}/day</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Net Sales Price</div>
+                    <div className="text-white">${(scenario.salesPrice / 1000000).toFixed(2)}M</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">Historical Market Context</h3>
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Historical Average BHSI-38 (2017-2025 YTD)</span>
+              <span className="text-white">${project.market?.historicalAvgBHSI?.toLocaleString()}/day</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Historical Average 16-Year Old Handysize</span>
+              <span className="text-white">${(project.market?.historicalAvg16YearOld / 1000000).toFixed(1)}M</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RisksTab({ project }: { project: any }) {
+  return (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-lg font-medium text-white mb-4">Risk Factors</h3>
+        <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-6">
+          <p className="text-sm text-gray-400 mb-4">
+            Investment in this project is associated with various risks. Investors must be aware of the risk of losing part of or the whole invested amount. 
+            This list should not be considered exhaustive.
+          </p>
+          <ul className="space-y-3">
+            {project.riskFactors?.map((risk: string, index: number) => (
+              <li key={index} className="flex items-start gap-3 text-gray-300">
+                <span className="text-yellow-400 mt-1">⚠</span>
+                <span className="text-sm">{risk}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -285,93 +681,3 @@ function OverviewTab({ project }: { project: any }) {
   )
 }
 
-function InvestorsTab() {
-  const mockInvestors = [
-    { name: 'Investor A', amount: 200000, date: '2024-01-15' },
-    { name: 'Investor B', amount: 500000, date: '2024-01-20' },
-    { name: 'Investor C', amount: 300000, date: '2024-02-15' },
-    { name: 'Investor D', amount: 150000, date: '2024-02-20' },
-    { name: 'Investor E', amount: 350000, date: '2024-03-01' },
-  ]
-
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Current Investors
-      </h3>
-      <div className="space-y-3">
-        {mockInvestors.map((investor, index) => (
-          <div
-            key={index}
-            className="flex justify-between items-center py-3 border-b border-gray-100"
-          >
-            <div>
-              <div className="font-medium text-gray-900">{investor.name}</div>
-              <div className="text-sm text-gray-500">
-                Invested on {new Date(investor.date).toLocaleDateString()}
-              </div>
-            </div>
-            <div className="text-lg font-medium text-gray-900">
-              €{(investor.amount / 1000).toFixed(0)}K
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function ActivityTab({ activities }: { activities: Activity[] }) {
-  const getActivityIcon = (type: Activity['type']) => {
-    switch (type) {
-      case 'created':
-        return '📋'
-      case 'investment':
-        return '💰'
-      case 'milestone':
-        return '🎯'
-      case 'update':
-        return '📢'
-      default:
-        return '•'
-    }
-  }
-
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Log</h3>
-      <div className="space-y-4">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            className="flex gap-4 pb-4 border-b border-gray-100 last:border-0"
-          >
-            <div className="text-2xl">{getActivityIcon(activity.type)}</div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-gray-900">
-                  {activity.message}
-                </span>
-                {activity.user && (
-                  <span className="text-sm text-gray-500">by {activity.user}</span>
-                )}
-                {activity.amount && (
-                  <span className="text-sm font-medium" style={{ color: '#90EE90' }}>
-                    €{(activity.amount / 1000).toFixed(0)}K
-                  </span>
-                )}
-              </div>
-              <div className="text-sm text-gray-500">
-                {new Date(activity.date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}

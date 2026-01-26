@@ -1,277 +1,351 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
+import { supabase } from '@/lib/supabaseClient'
 
-type Project = {
+type ShipProject = {
   id: string
-  title: string
-  sector: 'shipping' | 'construction'
+  shipName: string
+  shipType: string
   description: string
-  minInvestment: number
-  goal: number
-  raised: number
-  deadline: string
-  investors: number
+  minTicketSize: number // Minimum investment amount
+  returnPerYear: number // Annual return percentage
   status: 'open' | 'funded' | 'closing'
+  purchasePrice?: number
+  equityValue?: number
+  deadweight?: number
+  built?: string
+  yard?: string
+  technicalRating?: string
+  management?: string
+  subscriptionPeriod?: string
 }
 
-const mockProjects: Project[] = [
+// Ship projects data from Information Memorandum - Dalex Handy AS / L.P.
+// Project Finance November 2025
+const shipProjects: ShipProject[] = [
   {
     id: '1',
-    title: 'Container Ship Fleet Expansion',
-    sector: 'shipping',
-    description:
-      'Acquisition of two modern container vessels to expand Mediterranean routes',
-    minInvestment: 50000,
-    goal: 5000000,
-    raised: 2500000,
-    deadline: '2024-08-15',
-    investors: 12,
+    shipName: 'MV Atlantic Bulker',
+    shipType: 'Handysize Dry Bulk Carrier',
+    description: 'Japanese 2014-built 36,309dwt Handysize Bulk Carrier. Vessel rated technically 7.8 out of 10 by Aalmar Marine Surveyor. Attractive entry level at approximately 10% below newbuild parity. Acquisition of a Japanese 36kdwt Handysize Bulk Carrier with competitive speed/consumption. Dry bulk market has improved significantly since June with earnings lift (>45%) outpacing asset values (Abt. 14%) – providing a potential attractive time of entry for investors.',
+    minTicketSize: 142500, // USD 142,500 (1.5% minimum subscription)
+    returnPerYear: 17.0, // Base case return 17% p.a.
     status: 'open',
-  },
-  {
-    id: '2',
-    title: 'Residential Complex Development',
-    sector: 'construction',
-    description:
-      'Construction of 120-unit residential complex in Athens metropolitan area',
-    minInvestment: 25000,
-    goal: 8000000,
-    raised: 3200000,
-    deadline: '2024-09-30',
-    investors: 18,
-    status: 'open',
-  },
-  {
-    id: '3',
-    title: 'Bulk Carrier Modernization',
-    sector: 'shipping',
-    description:
-      'Retrofit of existing bulk carrier fleet with eco-friendly propulsion systems',
-    minInvestment: 75000,
-    goal: 3500000,
-    raised: 1750000,
-    deadline: '2024-07-20',
-    investors: 8,
-    status: 'open',
-  },
-  {
-    id: '4',
-    title: 'Commercial Office Building',
-    sector: 'construction',
-    description:
-      'Development of 15-story office building in central business district',
-    minInvestment: 100000,
-    goal: 10000000,
-    raised: 4500000,
-    deadline: '2024-10-15',
-    investors: 15,
-    status: 'open',
+    purchasePrice: 16000000, // USD 16,000,000
+    equityValue: 9500000, // USD 9,500,000
+    deadweight: 36309, // 36,309 dwt
+    built: 'April 2014',
+    yard: 'Shikoku, Japan',
+    technicalRating: '7.8/10',
+    management: 'Dalex Shipping Co. S.A.',
+    subscriptionPeriod: '17.11.2025 – 26.11.2025',
   },
 ]
 
 export default function MarketplacePage() {
-  const [selectedSector, setSelectedSector] = useState<string>('all')
-  const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
-  const sectors = [
-    { key: 'all', label: 'All Projects' },
-    { key: 'shipping', label: 'Shipping' },
-    { key: 'construction', label: 'Construction' },
-  ]
+  useEffect(() => {
+    checkAuthorization()
+  }, [])
 
-  const filteredProjects = mockProjects.filter((project) => {
-    const matchesSector =
-      selectedSector === 'all' || project.sector === selectedSector
-    const matchesSearch =
-      searchQuery === '' ||
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSector && matchesSearch
-  })
+  const checkAuthorization = async () => {
+    try {
+      // Get email from sessionStorage (only used to identify which user to check)
+      const sessionEmail = sessionStorage.getItem('user_email')
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="mb-6">
-            <Logo className="mb-4" />
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-medium text-gray-900">Marketplace</h1>
-              <div className="text-sm text-gray-600">
-                {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} available
-              </div>
+      if (!sessionEmail) {
+        // No email found, user needs to log in
+        setIsAuthorized(false)
+        setIsLoading(false)
+        return
+      }
+
+      // ALWAYS check Supabase directly - this is the single source of truth
+      // Only users with status = 'approved' in Supabase can access
+      const { data, error } = await supabase
+        .from('applications')
+        .select('status, email')
+        .eq('email', sessionEmail)
+        .eq('status', 'approved')
+        .single()
+
+      if (data && !error && data.status === 'approved') {
+        // User is approved in Supabase - grant access
+        setIsAuthorized(true)
+        setUserEmail(data.email)
+        setIsLoading(false)
+      } else {
+        // User not found or not approved in Supabase - deny access
+        setIsAuthorized(false)
+        setIsLoading(false)
+      }
+    } catch (err) {
+      console.error('Authorization error:', err)
+      setIsAuthorized(false)
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8">
+        <div className="max-w-lg w-full space-y-8 text-center">
+          <Logo />
+          <div className="space-y-4">
+            <h2 className="text-2xl font-medium text-white">
+              Access Restricted
+            </h2>
+            <p className="text-gray-400 text-sm">
+              The marketplace is only available to approved investors.
+            </p>
+            <p className="text-gray-500 text-xs">
+              Access is granted only when your application status is set to "approved" in our system.
+              Please check your application status or contact support if you believe this is an error.
+            </p>
+            <div className="space-y-3 mt-8">
+              <Link
+                href="/check-application"
+                className="block w-full py-4 px-6 rounded-lg font-medium tracking-wider text-black transition-colors"
+                style={{ backgroundColor: '#90EE90' }}
+              >
+                Check Application Status
+              </Link>
+              <Link
+                href="/"
+                className="block w-full py-4 px-6 rounded-lg font-medium tracking-wider text-white transition-colors"
+                style={{ border: '1px solid #90EE90' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#90EE90'
+                  e.currentTarget.style.color = '#000000'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.color = '#FFFFFF'
+                }}
+              >
+                Back to Home
+              </Link>
             </div>
           </div>
+        </div>
+      </div>
+    )
+  }
 
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search projects..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg outline-none"
-                style={{ border: '1px solid #90EE90' }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#90EE90'
-                  e.currentTarget.style.boxShadow = '0 0 0 2px #90EE90'
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = '#90EE90'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              />
-            </div>
-            <div className="flex gap-2">
-              {sectors.map((sector) => (
-                <button
-                  key={sector.key}
-                  onClick={() => setSelectedSector(sector.key)}
-                  className={`px-4 py-3 rounded-lg font-medium transition-colors ${
-                    selectedSector === sector.key
-                      ? 'text-black'
-                      : 'bg-white text-gray-700'
-                  }`}
-                  style={selectedSector === sector.key 
-                    ? { backgroundColor: '#90EE90' }
-                    : { border: '1px solid #90EE90' }
-                  }
-                  onMouseEnter={(e) => {
-                    if (selectedSector !== sector.key) {
-                      e.currentTarget.style.backgroundColor = '#90EE90'
-                      e.currentTarget.style.color = '#000000'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedSector !== sector.key) {
-                      e.currentTarget.style.backgroundColor = '#FFFFFF'
-                      e.currentTarget.style.color = '#374151'
-                    }
-                  }}
-                >
-                  {sector.label}
-                </button>
-              ))}
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header Section */}
+      <div className="border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-center mb-6 relative">
+            <Logo />
+            <Link
+              href="/"
+              className="absolute right-0 text-gray-400 hover:text-[#90EE90] transition-colors text-sm"
+              onClick={() => {
+                sessionStorage.removeItem('user_email')
+              }}
+            >
+              Logout
+            </Link>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-medium text-white mb-3">Investment Marketplace</h1>
+              <p className="text-gray-400 text-base">
+                {shipProjects.length} investment opportunity{shipProjects.length !== 1 ? 'ies' : ''} available
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Project Cards Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {filteredProjects.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-gray-500 text-lg">No projects found</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Stats Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <StatWidget
+            label="Total Projects"
+            value={shipProjects.length.toString()}
+            tooltip="The total number of investment opportunities currently available in the marketplace. Each project represents a ship investment opportunity with detailed information available for review."
+          />
+          <StatWidget
+            label="Average Return"
+            value={`${shipProjects.reduce((sum, ship) => sum + ship.returnPerYear, 0) / shipProjects.length}%`}
+            tooltip="The average annual Internal Rate of Return (IRR) across all available projects. This is calculated as the mean of the base case IRR projections for each project. Returns are net to investors and based on 5-year holding period assumptions."
+            isHighlight
+          />
+          <StatWidget
+            label="Minimum Investment"
+            value={`$${Math.min(...shipProjects.map(s => s.minTicketSize)) / 1000}K`}
+            tooltip="The lowest minimum subscription amount required to invest in any project. This represents the smallest equity stake (typically 1.5% of total equity) that an investor can commit to a project. Minimum investments vary by project."
+          />
+        </div>
+
+        {/* Ship Projects Grid */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-medium text-white mb-6">Available Investments</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {shipProjects.map((ship) => (
+              <ShipCard key={ship.id} ship={ship} />
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Info Section */}
+        <div className="mt-16 pt-12 border-t border-gray-800">
+          <div className="max-w-3xl mx-auto text-center">
+            <h3 className="text-xl font-medium text-white mb-4">Investment Process</h3>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              All investment opportunities are carefully vetted and managed by experienced professionals. 
+              Click on any project above to view detailed information and begin your investment journey.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-function ProjectCard({ project }: { project: Project }) {
-  const progress = (project.raised / project.goal) * 100
-  const daysRemaining = Math.ceil(
-    (new Date(project.deadline).getTime() - new Date().getTime()) /
-      (1000 * 60 * 60 * 24)
-  )
-
-  const sectorColors = {
-    shipping: 'text-[#90EE90]',
-    construction: 'text-[#90EE90]',
-  }
-
-  const statusColors = {
-    open: 'text-[#90EE90]',
-    funded: 'bg-gray-100 text-gray-800',
-    closing: 'text-[#90EE90]',
-  }
+function StatWidget({ 
+  label, 
+  value, 
+  tooltip, 
+  isHighlight = false 
+}: { 
+  label: string
+  value: string
+  tooltip: string
+  isHighlight?: boolean
+}) {
+  const [showTooltip, setShowTooltip] = useState(false)
 
   return (
-    <Link href={`/project/${project.id}`}>
-      <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${sectorColors[project.sector]}`}
-                style={{ backgroundColor: 'rgba(144, 238, 144, 0.2)' }}
-              >
-                {project.sector.charAt(0).toUpperCase() +
-                  project.sector.slice(1)}
-              </span>
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${statusColors[project.status]}`}
-                style={project.status === 'open' || project.status === 'closing' 
-                  ? { backgroundColor: 'rgba(144, 238, 144, 0.2)' }
-                  : {}
-                }
-              >
-                {project.status}
-              </span>
+    <div className="bg-black border border-gray-800 rounded-lg p-6 relative">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="text-sm text-gray-500">{label}</div>
+        <div 
+          className="relative inline-flex"
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          onFocus={() => setShowTooltip(true)}
+          onBlur={() => setShowTooltip(false)}
+        >
+          <button
+            type="button"
+            className="focus:outline-none"
+            aria-label="More information"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-gray-500 hover:text-[#90EE90] transition-colors cursor-help"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+          </button>
+          {showTooltip && (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-72 z-50 pointer-events-none">
+              <div className="bg-gray-900 border border-[#90EE90] rounded-lg p-4 shadow-2xl">
+                <p className="text-xs text-gray-300 leading-relaxed">{tooltip}</p>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-[#90EE90]"></div>
+              </div>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
-              {project.title}
-            </h3>
-          </div>
+          )}
         </div>
+      </div>
+      <div className={`text-3xl font-medium ${isHighlight ? 'text-[#90EE90]' : 'text-white'}`}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function ShipCard({ ship }: { ship: ShipProject }) {
+  return (
+    <Link href={`/project/${ship.id}`}>
+      <div className="bg-black border-2 border-gray-800 rounded-xl p-8 hover:border-[#90EE90] transition-all cursor-pointer group shadow-lg hover:shadow-[#90EE90]/20">
+        {/* Ship Type Badge */}
+        <div className="mb-5">
+          <span
+            className="px-4 py-2 rounded-lg text-xs font-semibold text-[#90EE90] uppercase tracking-wider"
+            style={{ backgroundColor: 'rgba(144, 238, 144, 0.1)' }}
+          >
+            {ship.shipType}
+          </span>
+        </div>
+
+        {/* Ship Name */}
+        <h3 className="text-2xl font-semibold text-white mb-3 group-hover:text-[#90EE90] transition-colors">
+          {ship.shipName}
+        </h3>
 
         {/* Description */}
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-          {project.description}
+        <p className="text-sm text-gray-400 mb-8 line-clamp-3 leading-relaxed">
+          {ship.description}
         </p>
 
-        {/* Progress */}
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              €{(project.raised / 1000000).toFixed(1)}M raised
-            </span>
-            <span className="text-sm text-gray-500">
-              of €{(project.goal / 1000000).toFixed(1)}M goal
-            </span>
+        {/* Key Metrics - Highlighted */}
+        <div className="space-y-5 pt-6 border-t border-gray-800 mb-6">
+          <div className="flex items-center justify-between bg-gray-900/50 rounded-lg p-4">
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Minimum Ticket Size</div>
+              <div className="text-2xl font-bold text-white">
+                ${(ship.minTicketSize / 1000).toFixed(0)}K
+              </div>
+            </div>
+            <div className="text-3xl opacity-20">💰</div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="h-2 rounded-full transition-all"
-              style={{ width: `${progress}%`, backgroundColor: '#90EE90' }}
-            />
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {progress.toFixed(0)}% funded
+          <div className="flex items-center justify-between rounded-lg p-4" style={{ backgroundColor: 'rgba(144, 238, 144, 0.1)' }}>
+            <div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Return Per Year</div>
+              <div className="text-2xl font-bold text-[#90EE90]">
+                {ship.returnPerYear}%
+              </div>
+            </div>
+            <div className="text-3xl opacity-20">📈</div>
           </div>
         </div>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Min. Investment</div>
-            <div className="text-sm font-medium text-gray-900">
-              €{(project.minInvestment / 1000).toFixed(0)}K
-            </div>
+        {/* Status and CTA */}
+        <div className="flex items-center justify-between pt-6 border-t border-gray-800">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Status:</span>
+            <span
+              className="px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                color: ship.status === 'open' ? '#90EE90' : '#9CA3AF',
+                backgroundColor: ship.status === 'open' ? 'rgba(144, 238, 144, 0.15)' : 'rgba(156, 163, 175, 0.15)',
+              }}
+            >
+              {ship.status.charAt(0).toUpperCase() + ship.status.slice(1)}
+            </span>
           </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Investors</div>
-            <div className="text-sm font-medium text-gray-900">
-              {project.investors}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Days Left</div>
-            <div className="text-sm font-medium text-gray-900">
-              {daysRemaining > 0 ? daysRemaining : 0}
-            </div>
+          <div className="text-[#90EE90] group-hover:translate-x-1 transition-transform">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
           </div>
         </div>
       </div>
