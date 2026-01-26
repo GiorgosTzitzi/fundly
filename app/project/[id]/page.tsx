@@ -143,14 +143,241 @@ const dalexHandyProject = {
   ],
 }
 
-const mockProject = dalexHandyProject
-
+// Additional projects data
+const projectsData = [
+  dalexHandyProject,
+  {
+    id: '2',
+    title: 'MV Pacific Trader',
+    shipName: 'MV Pacific Trader',
+    shipNameToBeRenamed: '',
+    sector: 'shipping',
+    shipType: 'Handysize Dry Bulk Carrier',
+    description: 'Acquisition of Korean 2015-built Handysize Dry Bulk Vessel. The purchase price for the 37,200dwt unit is USD 17.2m (abt. 8% below newbuild parity). Modern eco-design with fuel-efficient engines.',
+    minInvestment: 165000,
+    goal: 11000000,
+    raised: 8250000, // 75% pre-subscriptions
+    deadline: '2025-12-15',
+    investors: 0,
+    status: 'open',
+    equity: 56,
+    debt: 44,
+    riskLevel: 'Medium',
+    expectedReturn: '18.5% p.a.',
+    duration: '5 years',
+    vessel: {
+      built: 'March 2015',
+      yard: 'Hyundai Mipo, South Korea',
+      design: 'Eco Handysize',
+      class: 'KR',
+      flag: 'Marshall Islands',
+      deadweight: 37200,
+      cargoHolds: 5,
+      hatches: 5,
+      speedLaden: '13.0kn / 11.5kn (Eco Speed) / 9.5kn (Super Eco Speed)',
+      consumptionLaden: '19.5mt / 15.5mt / 11.5mt',
+      speedBallast: '13.8kn / 12.0kn (Eco Speed) / 10.0kn (Super Eco Speed)',
+      consumptionBallast: '19.5mt / 15.5mt / 11.5mt',
+      bwts: 'Alfa Laval Pureblast 3.1, Installed 2023',
+      ldwt: 7800,
+      ciiRating: 'B (Projected)',
+      dimensions: 'LOA: 179.20 / Beam: 29.00 / Draught: 10.85m',
+      mainEngine: 'MAN B&W 6S46ME-C8',
+      nextSSDD: 'April 2028',
+      technicalRating: '8.1/10',
+      surveyor: 'Aalmar Marine Surveyor',
+      inspectionDate: 'November 15, 2025',
+    },
+    financials: {
+      purchasePrice: 17200000,
+      equityValue: 11000000,
+      mortgageDebt: 8700000,
+      margin: '225 bps, falling to 210 bps after full cash sweep',
+      upfrontFee: '100 bps',
+      commitmentFee: '100 bps',
+      tenor: '5 years from delivery',
+      balloonPayment: 2900000,
+      ageAdjustedProfile: '>20-year profile to zero',
+      cashBreakeven: 9200,
+      opexBudget: 5100,
+      baseCaseIRR: 18.5,
+      moic: 2.05,
+    },
+    market: {
+      avgNetTCRate: 13800,
+      netSalesPrice: 14500000,
+      historicalAvgBHSI: 13562,
+      historicalAvg16YearOld: 15000000,
+    },
+    management: {
+      technicalCommercial: 'Dalex Shipping Co. S.A.',
+      corporateManager: 'NRP Business Management AS',
+      arranger: 'NRP Project Finance AS',
+      sponsor: 'Dalex Shipping Co. S.A. (min. 30% equity)',
+    },
+    highlights: [
+      'Acquisition at attractive entry level (Abt. 8% below newbuild parity)',
+      'Vessel rated technically 8.1 out of 10 by Aalmar Marine Surveyor',
+      'Modern eco-design with fuel-efficient engines',
+      'Strong market fundamentals with limited orderbook',
+      'Attractive debt financing with over 20-year profile to zero',
+      'Dalex Shipping investing 30% equity',
+      'Pre-subscriptions and indications of abt. 75%',
+    ],
+    returnScenarios: [
+      {
+        avgTCRate: 11200,
+        salesPrice: 10500000,
+        irr: 2.1,
+        label: 'Low Case',
+      },
+      {
+        avgTCRate: 13800,
+        salesPrice: 14500000,
+        irr: 18.5,
+        label: 'Base Case',
+      },
+      {
+        avgTCRate: 15800,
+        salesPrice: 17500000,
+        irr: 29.8,
+        label: 'High Case',
+      },
+    ],
+    subscriptionPeriod: '01.12.2025 – 15.12.2025',
+    riskFactors: [
+      'Market volatility in shipping industry',
+      'Regulatory changes affecting maritime operations',
+      'Fuel price fluctuations',
+      'Currency exchange rate risks',
+      'Counterparty risk in charter agreements',
+      'Technical and operational risks',
+      'Residual value fluctuations',
+      'Liquidity of company shares',
+      'Legislative, class, environment and tax changes',
+    ],
+  },
+  {
+    id: '3',
+    title: 'MV Nordic Carrier',
+    shipName: 'MV Nordic Carrier',
+    shipNameToBeRenamed: '',
+    sector: 'shipping',
+    shipType: 'Handysize Dry Bulk Carrier',
+    description: 'Acquisition of Japanese 2013-built Handysize Dry Bulk Vessel. The purchase price for the 35,800dwt unit is USD 14.8m (abt. 12% below newbuild parity). Well-maintained vessel with recent drydock completion.',
+    minInvestment: 127500,
+    goal: 8500000,
+    raised: 6375000, // 75% pre-subscriptions
+    deadline: '2025-12-20',
+    investors: 0,
+    status: 'open',
+    equity: 54,
+    debt: 46,
+    riskLevel: 'Medium',
+    expectedReturn: '15.8% p.a.',
+    duration: '5 years',
+    vessel: {
+      built: 'September 2013',
+      yard: 'Onomichi, Japan',
+      design: 'Handysize',
+      class: 'NKK',
+      flag: 'Marshall Islands',
+      deadweight: 35800,
+      cargoHolds: 5,
+      hatches: 5,
+      speedLaden: '12.3kn / 10.8kn (Eco Speed) / 8.8kn (Super Eco Speed)',
+      consumptionLaden: '20.5mt / 16.5mt / 12.5mt',
+      speedBallast: '13.2kn / 11.2kn (Eco Speed) / 9.2kn (Super Eco Speed)',
+      consumptionBallast: '20.5mt / 16.5mt / 12.5mt',
+      bwts: 'Alfa Laval Pureblast 3.0, Installed 2021',
+      ldwt: 7400,
+      ciiRating: 'B (Projected)',
+      dimensions: 'LOA: 175.80 / Beam: 28.60 / Draught: 10.65m',
+      mainEngine: 'MAN B&W 6S46MCC8',
+      nextSSDD: 'February 2027',
+      technicalRating: '7.6/10',
+      surveyor: 'Aalmar Marine Surveyor',
+      inspectionDate: 'November 20, 2025',
+    },
+    financials: {
+      purchasePrice: 14800000,
+      equityValue: 8500000,
+      mortgageDebt: 6800000,
+      margin: '235 bps, falling to 220 bps after full cash sweep',
+      upfrontFee: '100 bps',
+      commitmentFee: '100 bps',
+      tenor: '5 years from delivery',
+      balloonPayment: 2200000,
+      ageAdjustedProfile: '>20-year profile to zero',
+      cashBreakeven: 8900,
+      opexBudget: 4800,
+      baseCaseIRR: 15.8,
+      moic: 1.85,
+    },
+    market: {
+      avgNetTCRate: 13100,
+      netSalesPrice: 12000000,
+      historicalAvgBHSI: 13562,
+      historicalAvg16YearOld: 13000000,
+    },
+    management: {
+      technicalCommercial: 'Dalex Shipping Co. S.A.',
+      corporateManager: 'NRP Business Management AS',
+      arranger: 'NRP Project Finance AS',
+      sponsor: 'Dalex Shipping Co. S.A. (min. 30% equity)',
+    },
+    highlights: [
+      'Acquisition at attractive entry level (Abt. 12% below newbuild parity)',
+      'Vessel rated technically 7.6 out of 10 by Aalmar Marine Surveyor',
+      'Well-maintained vessel with recent drydock completion',
+      'Competitive operating costs',
+      'Attractive debt financing with over 20-year profile to zero',
+      'Dalex Shipping investing 30% equity',
+      'Pre-subscriptions and indications of abt. 75%',
+    ],
+    returnScenarios: [
+      {
+        avgTCRate: 10700,
+        salesPrice: 8500000,
+        irr: -1.2,
+        label: 'Low Case',
+      },
+      {
+        avgTCRate: 13100,
+        salesPrice: 12000000,
+        irr: 15.8,
+        label: 'Base Case',
+      },
+      {
+        avgTCRate: 15000,
+        salesPrice: 14500000,
+        irr: 26.5,
+        label: 'High Case',
+      },
+    ],
+    subscriptionPeriod: '05.12.2025 – 20.12.2025',
+    riskFactors: [
+      'Market volatility in shipping industry',
+      'Regulatory changes affecting maritime operations',
+      'Fuel price fluctuations',
+      'Currency exchange rate risks',
+      'Counterparty risk in charter agreements',
+      'Technical and operational risks',
+      'Residual value fluctuations',
+      'Liquidity of company shares',
+      'Legislative, class, environment and tax changes',
+    ],
+  },
+]
 
 export default function ProjectDetailPage() {
   const params = useParams()
   const [activeTab, setActiveTab] = useState<'overview' | 'vessel' | 'financials' | 'returns' | 'risks'>(
     'overview'
   )
+
+  const projectId = params?.id as string
+  const mockProject = projectsData.find(p => p.id === projectId) || dalexHandyProject
 
   const progress = (mockProject.raised / mockProject.goal) * 100
   const daysRemaining = Math.ceil(
@@ -290,7 +517,7 @@ export default function ProjectDetailPage() {
         <div className="bg-black rounded-lg border border-gray-800 p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <button className="flex-1 text-black py-4 px-6 rounded-lg font-medium transition-colors" style={{ backgroundColor: '#90EE90' }}>
-              Subscribe Now
+              Invest
             </button>
             <button 
               className="flex-1 text-white py-4 px-6 rounded-lg font-medium transition-colors"
@@ -304,7 +531,7 @@ export default function ProjectDetailPage() {
                 e.currentTarget.style.color = '#FFFFFF'
               }}
             >
-              Contact Arranger
+              Contact
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-4 text-center">

@@ -93,14 +93,14 @@ export default function CheckApplicationPage() {
           label: 'Approved',
           color: '#90EE90',
           bgColor: 'rgba(144, 238, 144, 0.2)',
-          message: 'Congratulations! Your application has been approved.',
+          message: '',
         }
       case 'rejected':
         return {
           label: 'Rejected',
           color: '#FF6B6B',
           bgColor: 'rgba(255, 107, 107, 0.2)',
-          message: 'Unfortunately, your application was not approved at this time.',
+          message: 'Your application was not approved.',
         }
       case 'pending':
       default:
@@ -108,7 +108,7 @@ export default function CheckApplicationPage() {
           label: 'Pending',
           color: '#FFD93D',
           bgColor: 'rgba(255, 217, 61, 0.2)',
-          message: "We'll notify you once your application has been reviewed.",
+          message: '',
         }
     }
   }
@@ -227,7 +227,7 @@ export default function CheckApplicationPage() {
               className="w-full text-black py-4 px-6 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#90EE90' }}
             >
-              {isLoading ? 'Checking...' : 'Check Status'}
+              {isLoading ? 'Checking...' : 'Check'}
             </button>
           </form>
         ) : application ? (
@@ -252,9 +252,11 @@ export default function CheckApplicationPage() {
                   </span>
                 </div>
               </div>
-              <p className="text-gray-400 text-sm mt-4">
-                {getStatusDisplay(application.status).message}
-              </p>
+              {getStatusDisplay(application.status).message && (
+                <p className="text-gray-400 text-sm mt-4">
+                  {getStatusDisplay(application.status).message}
+                </p>
+              )}
               {application.status === 'approved' && (
                 <div className="mt-10 space-y-4">
                   <Link
@@ -266,11 +268,8 @@ export default function CheckApplicationPage() {
                       sessionStorage.setItem('user_email', application.email)
                     }}
                   >
-                    View Investment Opportunities →
+                    Invest →
                   </Link>
-                  <p className="text-gray-500 text-xs text-center">
-                    Explore available ship investment projects
-                  </p>
                 </div>
               )}
               {application.status === 'pending' && (

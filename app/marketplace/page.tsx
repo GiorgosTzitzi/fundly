@@ -24,6 +24,19 @@ type ShipProject = {
   subscriptionPeriod?: string
 }
 
+type ActiveDeal = {
+  id: string
+  shipName: string
+  shipType: string
+  totalStake: number // Percentage of ship being bid on (e.g., 5%)
+  highestBid: number // Current highest bid in USD
+  minRaise: number // Minimum raise amount in USD
+  ceilingInvestment: number // Maximum investment (e.g., $500K)
+  guaranteedStake: number // Guaranteed stake at ceiling (e.g., 1.5%)
+  endTime: number // Unix timestamp in milliseconds
+  bidCount: number // Number of bids placed
+}
+
 // Ship projects data from Information Memorandum - Dalex Handy AS / L.P.
 // Project Finance November 2025
 const shipProjects: ShipProject[] = [
@@ -44,7 +57,406 @@ const shipProjects: ShipProject[] = [
     management: 'Dalex Shipping Co. S.A.',
     subscriptionPeriod: '17.11.2025 – 26.11.2025',
   },
+  {
+    id: '2',
+    shipName: 'MV Pacific Trader',
+    shipType: 'Handysize Dry Bulk Carrier',
+    description: 'Korean 2015-built 37,200dwt Handysize Bulk Carrier. Vessel rated technically 8.1 out of 10 by Aalmar Marine Surveyor. Modern eco-design with fuel-efficient engines. Acquisition at attractive entry point approximately 8% below newbuild parity. Strong market fundamentals with limited orderbook and aging fleet supporting favorable outlook.',
+    minTicketSize: 165000, // USD 165,000 (1.5% minimum subscription)
+    returnPerYear: 18.5, // Base case return 18.5% p.a.
+    status: 'open',
+    purchasePrice: 17200000, // USD 17,200,000
+    equityValue: 11000000, // USD 11,000,000
+    deadweight: 37200, // 37,200 dwt
+    built: 'March 2015',
+    yard: 'Hyundai Mipo, South Korea',
+    technicalRating: '8.1/10',
+    management: 'Dalex Shipping Co. S.A.',
+    subscriptionPeriod: '01.12.2025 – 15.12.2025',
+  },
+  {
+    id: '3',
+    shipName: 'MV Nordic Carrier',
+    shipType: 'Handysize Dry Bulk Carrier',
+    description: 'Japanese 2013-built 35,800dwt Handysize Bulk Carrier. Vessel rated technically 7.6 out of 10 by Aalmar Marine Surveyor. Well-maintained vessel with recent drydock completion. Attractive entry level at approximately 12% below newbuild parity. Competitive operating costs and strong commercial management track record.',
+    minTicketSize: 127500, // USD 127,500 (1.5% minimum subscription)
+    returnPerYear: 15.8, // Base case return 15.8% p.a.
+    status: 'open',
+    purchasePrice: 14800000, // USD 14,800,000
+    equityValue: 8500000, // USD 8,500,000
+    deadweight: 35800, // 35,800 dwt
+    built: 'September 2013',
+    yard: 'Onomichi, Japan',
+    technicalRating: '7.6/10',
+    management: 'Dalex Shipping Co. S.A.',
+    subscriptionPeriod: '05.12.2025 – 20.12.2025',
+  },
 ]
+
+// Active deals with live bidding
+const activeDeals: ActiveDeal[] = [
+  {
+    id: 'bid-1',
+    shipName: 'MV Atlantic Bulker',
+    shipType: 'Handysize Dry Bulk Carrier',
+    totalStake: 5, // 5% of ship
+    highestBid: 285000, // $285K current highest bid
+    minRaise: 10000, // Minimum $10K raise
+    ceilingInvestment: 500000, // $500K ceiling
+    guaranteedStake: 1.5, // 1.5% guaranteed at ceiling
+    endTime: Date.now() + (2 * 60 * 60 * 1000) + (45 * 60 * 1000) + (30 * 1000), // 2h 45m 30s from now
+    bidCount: 12,
+  },
+  {
+    id: 'bid-2',
+    shipName: 'MV Pacific Trader',
+    shipType: 'Handysize Dry Bulk Carrier',
+    totalStake: 5,
+    highestBid: 320000,
+    minRaise: 15000,
+    ceilingInvestment: 500000,
+    guaranteedStake: 1.5,
+    endTime: Date.now() + (1 * 60 * 60 * 1000) + (20 * 60 * 1000) + (15 * 1000), // 1h 20m 15s
+    bidCount: 8,
+  },
+]
+
+type Bid = {
+  id: string
+  dealId: string
+  bidderEmail: string
+  bidderPhone: string
+  bidderName: string
+  bidAmount: number
+  timestamp: number
+  stakePercentage: number
+}
+
+function ActiveDealCard({ deal }: { deal: ActiveDeal }) {
+  const [timeRemaining, setTimeRemaining] = useState(deal.endTime - Date.now())
+  const [bidAmount, setBidAmount] = useState(deal.highestBid + deal.minRaise)
+  const [isBidding, setIsBidding] = useState(false)
+  const [bids, setBids] = useState<Bid[]>([])
+  const [showBidHistory, setShowBidHistory] = useState(false)
+  const [currentHighestBid, setCurrentHighestBid] = useState(deal.highestBid)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = deal.endTime - Date.now()
+      setTimeRemaining(Math.max(0, remaining))
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [deal.endTime])
+
+  // Load bids from localStorage on mount
+  useEffect(() => {
+    const savedBids = localStorage.getItem(`bids_${deal.id}`)
+    if (savedBids) {
+      const parsedBids = JSON.parse(savedBids) as Bid[]
+      setBids(parsedBids)
+      if (parsedBids.length > 0) {
+        const highest = Math.max(...parsedBids.map(b => b.bidAmount))
+        setCurrentHighestBid(highest)
+        setBidAmount(highest + deal.minRaise)
+      }
+    }
+  }, [deal.id, deal.minRaise])
+
+  const formatTime = (ms: number) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60))
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  const handleBid = async () => {
+    if (bidAmount < currentHighestBid + deal.minRaise) {
+      alert(`Minimum bid is $${(currentHighestBid + deal.minRaise).toLocaleString()}`)
+      return
+    }
+
+    setIsBidding(true)
+
+    try {
+      const sessionEmail = sessionStorage.getItem('user_email')
+      
+      if (!sessionEmail) {
+        alert('Please log in to place a bid')
+        setIsBidding(false)
+        return
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from('applications')
+        .select('email, full_name, phone_number, phone_country_code')
+        .eq('email', sessionEmail)
+        .single()
+
+      if (userError || !userData) {
+        alert('Unable to retrieve user information')
+        setIsBidding(false)
+        return
+      }
+
+      const newBid: Bid = {
+        id: `bid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        dealId: deal.id,
+        bidderEmail: userData.email,
+        bidderPhone: `${userData.phone_country_code || ''}${userData.phone_number || ''}`,
+        bidderName: userData.full_name,
+        bidAmount: bidAmount,
+        timestamp: Date.now(),
+        stakePercentage: (bidAmount / deal.ceilingInvestment) * deal.guaranteedStake,
+      }
+
+      const updatedBids = [...bids, newBid].sort((a, b) => b.bidAmount - a.bidAmount)
+      setBids(updatedBids)
+      localStorage.setItem(`bids_${deal.id}`, JSON.stringify(updatedBids))
+      setCurrentHighestBid(bidAmount)
+      setBidAmount(bidAmount + deal.minRaise)
+
+      console.log('Bid placed:', {
+        bidId: newBid.id,
+        dealId: deal.id,
+        shipName: deal.shipName,
+        bidder: {
+          email: newBid.bidderEmail,
+          phone: newBid.bidderPhone,
+          name: newBid.bidderName,
+        },
+        bidAmount: newBid.bidAmount,
+        stakePercentage: newBid.stakePercentage,
+        timestamp: new Date(newBid.timestamp).toISOString(),
+      })
+
+      alert('Bid placed successfully!')
+    } catch (error) {
+      console.error('Error placing bid:', error)
+      alert('Error placing bid. Please try again.')
+    } finally {
+      setIsBidding(false)
+    }
+  }
+
+  const handleCeilingBid = async () => {
+    setIsBidding(true)
+
+    try {
+      const sessionEmail = sessionStorage.getItem('user_email')
+      
+      if (!sessionEmail) {
+        alert('Please log in to place a bid')
+        setIsBidding(false)
+        return
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from('applications')
+        .select('email, full_name, phone_number, phone_country_code')
+        .eq('email', sessionEmail)
+        .single()
+
+      if (userError || !userData) {
+        alert('Unable to retrieve user information')
+        setIsBidding(false)
+        return
+      }
+
+      const ceilingBid: Bid = {
+        id: `bid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        dealId: deal.id,
+        bidderEmail: userData.email,
+        bidderPhone: `${userData.phone_country_code || ''}${userData.phone_number || ''}`,
+        bidderName: userData.full_name,
+        bidAmount: deal.ceilingInvestment,
+        timestamp: Date.now(),
+        stakePercentage: deal.guaranteedStake,
+      }
+
+      const updatedBids = [...bids, ceilingBid].sort((a, b) => b.bidAmount - a.bidAmount)
+      setBids(updatedBids)
+      localStorage.setItem(`bids_${deal.id}`, JSON.stringify(updatedBids))
+      setCurrentHighestBid(deal.ceilingInvestment)
+
+      console.log('Ceiling bid placed:', {
+        bidId: ceilingBid.id,
+        dealId: deal.id,
+        shipName: deal.shipName,
+        bidder: {
+          email: ceilingBid.bidderEmail,
+          phone: ceilingBid.bidderPhone,
+          name: ceilingBid.bidderName,
+        },
+        bidAmount: ceilingBid.bidAmount,
+        guaranteedStake: ceilingBid.stakePercentage,
+        timestamp: new Date(ceilingBid.timestamp).toISOString(),
+      })
+
+      alert(`Guaranteed ${deal.guaranteedStake}% stake secured!`)
+    } catch (error) {
+      console.error('Error placing ceiling bid:', error)
+      alert('Error placing bid. Please try again.')
+    } finally {
+      setIsBidding(false)
+    }
+  }
+
+  const isExpired = timeRemaining <= 0
+  const stakeAtBid = (bidAmount / deal.ceilingInvestment) * deal.guaranteedStake
+  const displayHighestBid = bids.length > 0 ? currentHighestBid : deal.highestBid
+
+  return (
+    <div className="bg-black border-2 border-[#90EE90] rounded-xl p-6 relative overflow-hidden">
+      {/* Pulsing border animation for active deals */}
+      <div className="absolute inset-0 border-2 border-[#90EE90] rounded-xl animate-pulse opacity-30"></div>
+      
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="text-xs text-[#90EE90] uppercase tracking-wider mb-1">
+              {deal.shipType}
+            </div>
+            <h3 className="text-xl font-semibold text-white">{deal.shipName}</h3>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-gray-500 mb-1">Stake Available</div>
+            <div className="text-lg font-bold text-[#90EE90]">{deal.totalStake}%</div>
+          </div>
+        </div>
+
+        {/* Countdown Timer */}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-gray-500 mb-1">Time Remaining</div>
+              <div className={`text-2xl font-mono font-bold ${isExpired ? 'text-red-400' : 'text-[#90EE90]'}`}>
+                {isExpired ? '00:00:00' : formatTime(timeRemaining)}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-500 mb-1">Bids</div>
+              <div className="text-lg font-semibold text-white">{bids.length || deal.bidCount}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Current Bid Info */}
+        <div className="space-y-3 mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-400">Highest Bid</span>
+            <span className="text-lg font-bold text-white">${displayHighestBid.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-400">Minimum Raise</span>
+            <span className="text-sm font-medium text-[#90EE90]">${deal.minRaise.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center pt-2 border-t border-gray-800">
+            <span className="text-sm text-gray-400">Next Bid Must Be</span>
+            <span className="text-lg font-bold text-[#90EE90]">
+              ${(displayHighestBid + deal.minRaise).toLocaleString()}+
+            </span>
+          </div>
+          <button
+            onClick={() => setShowBidHistory(!showBidHistory)}
+            className="w-full mt-3 text-xs text-[#90EE90] hover:underline text-left"
+          >
+            {showBidHistory ? 'Hide' : 'Show'} Bid History ({bids.length})
+          </button>
+        </div>
+
+        {/* Ceiling Investment Info */}
+        <div className="bg-[#90EE90]/10 border border-[#90EE90]/30 rounded-lg p-3 mb-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="text-xs text-gray-400 mb-1">Ceiling Investment</div>
+              <div className="text-sm font-semibold text-white">
+                ${deal.ceilingInvestment.toLocaleString()} = {deal.guaranteedStake}% guaranteed
+              </div>
+            </div>
+            <button
+              onClick={handleCeilingBid}
+              disabled={isBidding || isExpired}
+              className="px-4 py-2 rounded-lg text-xs font-semibold text-black transition-colors disabled:opacity-50"
+              style={{ backgroundColor: '#90EE90' }}
+            >
+              {isBidding ? 'Processing...' : 'Secure'}
+            </button>
+          </div>
+        </div>
+
+        {/* Bidding Interface */}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs text-gray-400 mb-2">Your Bid</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={bidAmount}
+                onChange={(e) => setBidAmount(Number(e.target.value))}
+                min={displayHighestBid + deal.minRaise}
+                max={deal.ceilingInvestment}
+                className="flex-1 px-4 py-2 bg-black border border-gray-700 text-white rounded-lg focus:border-[#90EE90] focus:outline-none"
+                placeholder={`Min: $${(displayHighestBid + deal.minRaise).toLocaleString()}`}
+              />
+              <button
+                onClick={handleBid}
+                disabled={isBidding || isExpired || bidAmount < displayHighestBid + deal.minRaise}
+                className="px-6 py-2 rounded-lg font-semibold text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#90EE90' }}
+              >
+                {isBidding ? 'Bidding...' : 'Bid'}
+              </button>
+            </div>
+            {bidAmount >= displayHighestBid + deal.minRaise && bidAmount < deal.ceilingInvestment && (
+              <p className="text-xs text-gray-500 mt-2">
+                Your bid of ${bidAmount.toLocaleString()} ≈ {stakeAtBid.toFixed(2)}% stake
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Bid History Table */}
+        {showBidHistory && bids.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-gray-800">
+            <h4 className="text-sm font-semibold text-white mb-4">Bid History</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="text-left py-2 text-gray-400 font-medium">Bid ID</th>
+                    <th className="text-left py-2 text-gray-400 font-medium">Bidder</th>
+                    <th className="text-left py-2 text-gray-400 font-medium">Email</th>
+                    <th className="text-left py-2 text-gray-400 font-medium">Phone</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Amount</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Stake</th>
+                    <th className="text-right py-2 text-gray-400 font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bids.map((bid) => (
+                    <tr key={bid.id} className="border-b border-gray-900">
+                      <td className="py-2 text-gray-500 font-mono text-[10px]">{bid.id.substring(0, 12)}...</td>
+                      <td className="py-2 text-white">{bid.bidderName}</td>
+                      <td className="py-2 text-gray-400">{bid.bidderEmail}</td>
+                      <td className="py-2 text-gray-400">{bid.bidderPhone}</td>
+                      <td className="py-2 text-right text-white font-semibold">${bid.bidAmount.toLocaleString()}</td>
+                      <td className="py-2 text-right text-[#90EE90]">{bid.stakePercentage.toFixed(2)}%</td>
+                      <td className="py-2 text-right text-gray-500">
+                        {new Date(bid.timestamp).toLocaleTimeString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function BeProjectOwnerButton() {
   const [showTooltip, setShowTooltip] = useState(false)
@@ -65,13 +477,13 @@ function BeProjectOwnerButton() {
           backgroundColor: 'transparent'
         }}
       >
-        Be a project owner
+        Publish
       </button>
       {showTooltip && (
         <div className="absolute right-0 top-full mt-2 w-80 z-50">
           <div className="bg-gray-900 border border-[#90EE90] rounded-lg p-4 shadow-2xl">
             <p className="text-xs text-gray-300 leading-relaxed">
-              You need to be an approved project owner to publish and have an opportunity crowd fund your projects.
+              You need to be an approved project owner to crowd fund your projects.
             </p>
             <div className="absolute right-4 top-0 -translate-y-full w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-transparent border-b-[#90EE90]"></div>
           </div>
@@ -149,17 +561,13 @@ export default function MarketplacePage() {
             <p className="text-gray-400 text-sm">
               The marketplace is only available to approved investors.
             </p>
-            <p className="text-gray-500 text-xs">
-              Access is granted only when your application status is set to "approved" in our system.
-              Please check your application status or contact support if you believe this is an error.
-            </p>
             <div className="space-y-3 mt-8">
               <Link
                 href="/check-application"
                 className="block w-full py-4 px-6 rounded-lg font-medium tracking-wider text-black transition-colors"
                 style={{ backgroundColor: '#90EE90' }}
               >
-                Check Application Status
+                Status
               </Link>
               <Link
                 href="/"
@@ -216,6 +624,23 @@ export default function MarketplacePage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Active Deals Trading Section */}
+        {activeDeals.length > 0 && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-medium text-white">ACTIVE DEALS TRADING</h2>
+              <div className="text-sm text-gray-500">
+                {activeDeals.length} active auction{activeDeals.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {activeDeals.map((deal) => (
+                <ActiveDealCard key={deal.id} deal={deal} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Stats Bar */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <StatWidget
@@ -225,7 +650,7 @@ export default function MarketplacePage() {
           />
           <StatWidget
             label="Average Return"
-            value={`${shipProjects.reduce((sum, ship) => sum + ship.returnPerYear, 0) / shipProjects.length}%`}
+            value={`${(shipProjects.reduce((sum, ship) => sum + ship.returnPerYear, 0) / shipProjects.length).toFixed(2)}%`}
             tooltip="The average annual Internal Rate of Return (IRR) across all available projects. This is calculated as the mean of the base case IRR projections for each project. Returns are net to investors and based on 5-year holding period assumptions."
             isHighlight
           />
@@ -246,16 +671,6 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        {/* Info Section */}
-        <div className="mt-16 pt-12 border-t border-gray-800">
-          <div className="max-w-3xl mx-auto text-center">
-            <h3 className="text-xl font-medium text-white mb-4">Investment Process</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              All investment opportunities are carefully vetted and managed by experienced professionals. 
-              Click on any project above to view detailed information and begin your investment journey.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   )

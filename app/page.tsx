@@ -24,7 +24,7 @@ export default function Home() {
             className="block w-full py-4 px-6 rounded-lg font-medium tracking-wider text-black transition-colors"
             style={{ backgroundColor: '#90EE90' }}
           >
-            Request access
+            Apply
           </Link>
           <Link
             href="/check-application"
@@ -39,7 +39,7 @@ export default function Home() {
               e.currentTarget.style.color = '#FFFFFF'
             }}
           >
-            Check application
+            Status
           </Link>
         </div>
       </div>
