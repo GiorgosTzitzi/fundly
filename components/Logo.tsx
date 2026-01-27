@@ -1,10 +1,57 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function Logo({ className = '' }: { className?: string }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [href, setHref] = useState('/')
+
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      // If user is already on marketplace or project page, they're approved - redirect to marketplace
+      if (pathname?.startsWith('/marketplace') || pathname?.startsWith('/project/')) {
+        setHref('/marketplace')
+        return
+      }
+
+      const sessionEmail = sessionStorage.getItem('user_email')
+      if (sessionEmail) {
+        try {
+          const { data, error } = await supabase
+            .from('applications')
+            .select('status')
+            .eq('email', sessionEmail)
+            .eq('status', 'approved')
+            .single()
+
+          if (data && !error && data.status === 'approved') {
+            setHref('/marketplace')
+          }
+        } catch (err) {
+          // If check fails, default to home
+          setHref('/')
+        }
+      }
+    }
+    checkUserStatus()
+  }, [pathname])
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    // If on marketplace or project page, go directly to marketplace
+    if (pathname?.startsWith('/marketplace') || pathname?.startsWith('/project/')) {
+      router.push('/marketplace')
+    } else {
+      router.push(href)
+    }
+  }
+
   return (
-    <Link href="/" className={`flex flex-col items-center ${className} cursor-pointer`}>
+    <Link href={href} onClick={handleClick} className={`flex flex-col items-center ${className} cursor-pointer`}>
       {/* Logo Icon - Three circles connected by lines */}
       <svg
         width="160"

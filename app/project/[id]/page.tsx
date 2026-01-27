@@ -516,11 +516,11 @@ export default function ProjectDetailPage() {
         {/* Action Buttons */}
         <div className="bg-black rounded-lg border border-gray-800 p-6">
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="flex-1 text-black py-4 px-6 rounded-lg font-medium transition-colors" style={{ backgroundColor: '#90EE90' }}>
-              Invest
-            </button>
-            <button 
-              className="flex-1 text-white py-4 px-6 rounded-lg font-medium transition-colors"
+            <a
+              href={`https://mail.google.com/mail/?view=cm&fs=1&to=chrisalexopoulos01@gmail.com&su=Interest in ${encodeURIComponent(mockProject.shipName)}&body=${encodeURIComponent(`I am interested in participating in the project ${mockProject.shipName}. I'd love to talk more about this.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 text-white py-4 px-6 rounded-lg font-medium transition-colors text-center"
               style={{ border: '1px solid #90EE90' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#90EE90'
@@ -532,7 +532,7 @@ export default function ProjectDetailPage() {
               }}
             >
               Contact
-            </button>
+            </a>
           </div>
           <p className="text-xs text-gray-500 mt-4 text-center">
             Minimum subscription: ${(mockProject.minInvestment / 1000).toFixed(0)}K (1.5% of equity)
