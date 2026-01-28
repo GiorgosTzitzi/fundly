@@ -385,6 +385,26 @@ export default function ProjectDetailPage() {
       (1000 * 60 * 60 * 24)
   )
 
+  const handleContact = () => {
+    const email = 'chrisalexopoulos01@gmail.com'
+    const subject = `Interest in ${mockProject.shipName}`
+    const body = `I am interested in participating in the project ${mockProject.shipName}. I'd love to talk more about this.`
+    
+    // Try Gmail compose URL first (works if user is logged into Gmail)
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    
+    // Fallback to mailto (opens default email client)
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    
+    // Try opening Gmail in a new window
+    const gmailWindow = window.open(gmailUrl, '_blank')
+    
+    // If Gmail window didn't open or was blocked, fall back to mailto
+    if (!gmailWindow || gmailWindow.closed || typeof gmailWindow.closed === 'undefined') {
+      window.location.href = mailtoUrl
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black">
       <div className="max-w-6xl mx-auto px-6 py-8">
@@ -516,10 +536,8 @@ export default function ProjectDetailPage() {
         {/* Action Buttons */}
         <div className="bg-black rounded-lg border border-gray-800 p-6">
           <div className="flex flex-col sm:flex-row gap-4">
-            <a
-              href={`https://mail.google.com/mail/?view=cm&fs=1&to=chrisalexopoulos01@gmail.com&su=Interest in ${encodeURIComponent(mockProject.shipName)}&body=${encodeURIComponent(`I am interested in participating in the project ${mockProject.shipName}. I'd love to talk more about this.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={handleContact}
               className="flex-1 text-white py-4 px-6 rounded-lg font-medium transition-colors text-center"
               style={{ border: '1px solid #90EE90' }}
               onMouseEnter={(e) => {
@@ -532,7 +550,7 @@ export default function ProjectDetailPage() {
               }}
             >
               Contact
-            </a>
+            </button>
           </div>
           <p className="text-xs text-gray-500 mt-4 text-center">
             Minimum subscription: ${(mockProject.minInvestment / 1000).toFixed(0)}K (1.5% of equity)

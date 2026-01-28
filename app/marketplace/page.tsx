@@ -268,7 +268,24 @@ export default function MarketplacePage() {
 
         {/* Ship Projects Grid */}
         <div className="mb-8">
-          <h2 className="text-2xl font-medium text-white mb-6">Available Investments</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-medium text-white">Available Investments</h2>
+            <Link
+              href="/compare"
+              className="px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+              style={{ border: '1px solid #90EE90', color: '#90EE90' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#90EE90'
+                e.currentTarget.style.color = '#000000'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = '#90EE90'
+              }}
+            >
+              Compare Deals
+            </Link>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {shipProjects.map((ship) => (
               <ShipCard key={ship.id} ship={ship} />
@@ -344,9 +361,30 @@ function StatWidget({
 }
 
 function ShipCard({ ship }: { ship: ShipProject }) {
+  const handleCompareClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const currentProjects = new URLSearchParams(window.location.search).get('compare') || ''
+    const projects = currentProjects ? `${currentProjects},${ship.id}` : ship.id
+    window.location.href = `/compare?projects=${projects}`
+  }
+
   return (
-    <Link href={`/project/${ship.id}`}>
-      <div className="bg-black border-2 border-gray-800 rounded-xl p-8 hover:border-[#90EE90] transition-all cursor-pointer group shadow-lg hover:shadow-[#90EE90]/20">
+    <div className="relative group">
+      {/* Compare Button */}
+      <button
+        onClick={handleCompareClick}
+        className="absolute top-4 right-4 z-10 w-8 h-8 rounded border-2 border-gray-600 hover:border-[#90EE90] flex items-center justify-center transition-colors bg-black/80 opacity-0 group-hover:opacity-100"
+        title="Add to comparison"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
+          <path d="M8 3v3M8 21v-3M16 3v3M16 21v-3M3 8h3M21 8h-3M3 16h3M21 16h-3" />
+        </svg>
+      </button>
+
+      <Link href={`/project/${ship.id}`}>
+        <div className="bg-black border-2 border-gray-800 rounded-xl p-8 hover:border-[#90EE90] transition-all cursor-pointer shadow-lg hover:shadow-[#90EE90]/20">
+
         {/* Ship Type Badge */}
         <div className="mb-5">
           <span
@@ -410,6 +448,7 @@ function ShipCard({ ship }: { ship: ShipProject }) {
           </div>
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
   )
 }
