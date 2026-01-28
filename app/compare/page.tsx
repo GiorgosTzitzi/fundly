@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
@@ -117,7 +117,7 @@ type AIRecommendation = {
   confidence: number
 }
 
-export default function ComparePage() {
+function ComparePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [selectedProjects, setSelectedProjects] = useState<string[]>([])
@@ -441,6 +441,18 @@ export default function ComparePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <ComparePageContent />
+    </Suspense>
   )
 }
 
